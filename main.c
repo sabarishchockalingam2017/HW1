@@ -33,7 +33,7 @@
 #pragma config FWDTWINSZ = WINSZ_25     // Watchdog Timer Window Size (Window Size is 25%)
 
 // DEVCFG0
-#pragma config JTAGEN = ON              // JTAG Enable (JTAG Port Enabled)
+#pragma config JTAGEN = OFF              // JTAG Enable (JTAG Port Enabled)
 #pragma config ICESEL = ICS_PGx1        // ICE/ICD Comm Channel Select (Communicate on PGEC1/PGED1)
 #pragma config PWP = OFF                // Program Flash Write Protect (Disable)
 #pragma config BWP = OFF                // Boot Flash Write Protect bit (Protection Disabled)
@@ -45,7 +45,7 @@
 #include <xc.h>
 
 
-
+void delay(void);
 
 int main() {
 
@@ -66,11 +66,30 @@ int main() {
     // do your TRIS and LAT commands here
 
     __builtin_enable_interrupts();
-    TRISA = 0x0000;
-    LATA = 0xFFFF;
-
+    
+    TRISBbits.TRISB4=1; //making B4 into PORT for usrbutton
+    TRISBbits.TRISB8=1; //making B4 into PORT for usrbutton
+    TRISBbits.TRISB7=0; //making B7 into LAT for output
+    TRISAbits.TRISA4=0; //making A4 into LAT for LED output
+    LATBbits.LATB7=1;
+    LATAbits.LATA4=1;
+    
     while(1) {
+        LATBbits.LATB7=!PORTBbits.RB4;
+//        delay();
+//        LATBINV=0b10000000;
 	    // use _CP0_SET_COUNT(0) and _CP0_GET_COUNT() to test the PIC timing
 		  // remember the core timer runs at half the sysclk
     }
+    return 0;
+}
+
+void delay(void) {
+  int j;
+  for (j = 0; j < 100000; j++) { // number is 1 million
+      ;
+//    while(PORTBbits.RB8) {
+//        ;   // Pin B4 is the USER switch, low (FALSE) if pressed.
+//    }
+  }
 }
