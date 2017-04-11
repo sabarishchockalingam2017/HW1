@@ -4,47 +4,42 @@
 // PIC32MX250F128B Configuration Bit Settings
 
 // 'C' source line config statements
-
-// DEVCFG3
-// USERID = No Setting
-#pragma config PMDL1WAY = ON            // Peripheral Module Disable Configuration (Allow only one reconfiguration)
-#pragma config IOL1WAY = ON             // Peripheral Pin Select Configuration (Allow only one reconfiguration)
-#pragma config FUSBIDIO = ON            // USB USID Selection (Controlled by the USB Module)
-#pragma config FVBUSONIO = ON           // USB VBUS ON Selection (Controlled by USB Module)
-
-// DEVCFG2
-#pragma config FPLLIDIV = DIV_12        // PLL Input Divider (12x Divider)
-#pragma config FPLLMUL = MUL_24         // PLL Multiplier (24x Multiplier)
-#pragma config UPLLIDIV = DIV_12        // USB PLL Input Divider (12x Divider)
-#pragma config UPLLEN = OFF             // USB PLL Enable (Disabled and Bypassed)
-#pragma config FPLLODIV = DIV_256       // System PLL Output Clock Divider (PLL Divide by 256)
+// DEVCFG0
+#pragma config DEBUG = 0b11 // no debugging
+#pragma config JTAGEN = OFF // no jtag
+#pragma config ICESEL = ICS_PGx1 // use PGED1 and PGEC1
+#pragma config PWP = OFF // no write protect
+#pragma config BWP = OFF // no boot write protect
+#pragma config CP = OFF // no code protect
 
 // DEVCFG1
-#pragma config FNOSC = FRCDIV           // Oscillator Selection Bits (Fast RC Osc w/Div-by-N (FRCDIV))
-#pragma config FSOSCEN = ON             // Secondary Oscillator Enable (Enabled)
-#pragma config IESO = ON                // Internal/External Switch Over (Enabled)
-#pragma config POSCMOD = OFF            // Primary Oscillator Configuration (Primary osc disabled)
-#pragma config OSCIOFNC = OFF           // CLKO Output Signal Active on the OSCO Pin (Disabled)
-#pragma config FPBDIV = DIV_8           // Peripheral Clock Divisor (Pb_Clk is Sys_Clk/8)
-#pragma config FCKSM = CSDCMD           // Clock Switching and Monitor Selection (Clock Switch Disable, FSCM Disabled)
-#pragma config WDTPS = PS1048576        // Watchdog Timer Postscaler (1:1048576)
-#pragma config WINDIS = OFF             // Watchdog Timer Window Enable (Watchdog Timer is in Non-Window Mode)
-#pragma config FWDTEN = ON              // Watchdog Timer Enable (WDT Enabled)
-#pragma config FWDTWINSZ = WINSZ_25     // Watchdog Timer Window Size (Window Size is 25%)
+#pragma config FNOSC = PRIPLL // use primary oscillator with pll
+#pragma config FSOSCEN = OFF // turn off secondary oscillator
+#pragma config IESO = OFF // no switching clocks
+#pragma config POSCMOD = HS // high speed crystal mode
+#pragma config OSCIOFNC = OFF // disable secondary osc
+#pragma config FPBDIV = DIV_1 // divide sysclk freq by 1 for peripheral bus clock
+#pragma config FCKSM = CSDCMD // do not enable clock switch
+#pragma config WDTPS = PS1048576 // use slowest wdt
+#pragma config WINDIS = OFF // wdt no window mode
+#pragma config FWDTEN = OFF // wdt disabled
+#pragma config FWDTWINSZ = WINSZ_25 // wdt window at 25%
 
-// DEVCFG0
-#pragma config DEBUG = OFF
-#pragma config JTAGEN = OFF              // JTAG Enable (JTAG Port Enabled)
-#pragma config ICESEL = ICS_PGx1        // ICE/ICD Comm Channel Select (Communicate on PGEC1/PGED1)
-#pragma config PWP = OFF                // Program Flash Write Protect (Disable)
-#pragma config BWP = OFF                // Boot Flash Write Protect bit (Protection Disabled)
-#pragma config CP = OFF                 // Code Protect (Protection Disabled)
+// DEVCFG2 - get the sysclk clock to 48MHz from the 8MHz crystal
+#pragma config FPLLIDIV = DIV_2 // divide input clock to be in range 4-5MHz
+#pragma config FPLLMUL = MUL_24 // multiply clock after FPLLIDIV
+#pragma config FPLLODIV = DIV_2 // divide clock after FPLLMUL to get 48MHz
+#pragma config UPLLIDIV = DIV_12 // divider for the 8MHz input clock, then multiplied by 12 to get 48MHz for USB
+#pragma config UPLLEN = ON // USB clock on
 
+// DEVCFG3
+#pragma config USERID = 2017 // some 16bit userid, doesn't matter what
+#pragma config PMDL1WAY = OFF // allow multiple reconfigurations
+#pragma config IOL1WAY = OFF // allow multiple reconfigurations
+#pragma config FUSBIDIO = ON // USB pins controlled by USB module
+#pragma config FVBUSONIO = ON // USB BUSON controlled by USB module
 // #pragma config statements should precede project file includes.
 // Use project enums instead of #define for ON and OFF.
-
-#include <xc.h>
-
 
 void delay(void);
 
@@ -76,9 +71,15 @@ int main() {
     LATAbits.LATA4=1;
     
     while(1) {
-        LATBbits.LATB7=!PORTBbits.RB4;
-//        delay();
-//        LATBINV=0b10000000;
+//        LATBbits.LATB7=!PORTBbits.RB4;
+        _CP0_SET_COUNT(0);
+        while(_CP0_GET_COUNT()<25000){
+            ;
+            while(!PORTBbits.RB4) {
+                  ;   // Pin B4 is the USER switch, low (FALSE) if pressed.
+             }    
+        }        
+        LATAINV=0b10000;
 	    // use _CP0_SET_COUNT(0) and _CP0_GET_COUNT() to test the PIC timing
 		  // remember the core timer runs at half the sysclk
     }
@@ -87,10 +88,10 @@ int main() {
 
 void delay(void) {
   int j;
-  for (j = 0; j < 100000; j++) { // number is 1 million
+  for (j = 0; j < 1000000; j++) { // number is 1 million
       ;
-//    while(PORTBbits.RB8) {
-//        ;   // Pin B4 is the USER switch, low (FALSE) if pressed.
-//    }
+    while(!PORTBbits.RB4) {
+        ;   // Pin B4 is the USER switch, low (FALSE) if pressed.
+    }
   }
 }
